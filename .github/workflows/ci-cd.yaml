@@ -1,4 +1,4 @@
-name: Medinova CI Pipeline (Docker → ECR)
+name: Medinova CI Pipeline (Docker → ECR + GitOps Update)
 
 on:
   push:
@@ -24,7 +24,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
 
       # STEP 3: Login to Amazon ECR
       - name: Login to Amazon ECR
@@ -39,9 +39,30 @@ jobs:
       # STEP 5: Tag image for ECR
       - name: Tag Docker Image
         run: |
-          docker tag medinova:latest 318689657850.dkr.ecr.us-east-1.amazonaws.com/medinova:latest
+          docker tag $ECR_REPOSITORY:latest 318689657850.dkr.ecr.us-east-1.amazonaws.com/medinova:$GITHUB_RUN_NUMBER
 
       # STEP 6: Push image to ECR
       - name: Push Image to Amazon ECR
         run: |
-          docker push 318689657850.dkr.ecr.us-east-1.amazonaws.com/medinova:latest
+          docker push 318689657850.dkr.ecr.us-east-1.amazonaws.com/medinova:$GITHUB_RUN_NUMBER
+
+      # STEP 7: Update Kubernetes Manifest Repo
+      - name: Update Kubernetes Manifest Repo
+        env:
+          GIT_USERNAME: ${{ secrets.GIT_USERNAME }}
+          GIT_TOKEN: ${{ secrets.GIT_TOKEN }}
+
+        run: |
+          git clone https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/nwakileebere821/kubernetes-manifest-file.git
+          cd kubernetes-manifest-file
+
+          cat deployment.yaml
+
+          sed -i "s|image:.*|image: 318689657850.dkr.ecr.us-east-1.amazonaws.com/medinova:$GITHUB_RUN_NUMBER|g" deployment.yaml
+
+          git config user.email "nwakileebere821@gmail.com"
+          git config user.name "github-actions"
+
+          git add .
+          git commit -m "updated medinova image to $GITHUB_RUN_NUMBER"
+          git push https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/nwakileebere821/kubernetes-manifest-file.git HEAD:main
