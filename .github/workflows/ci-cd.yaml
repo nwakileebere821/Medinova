@@ -53,10 +53,11 @@ jobs:
           GIT_TOKEN: ${{ secrets.GIT_TOKEN }}
 
         run: |
-          git clone https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/nwakileebere821/kubernetes-manifest-file.git
-          cd kubernetes-manifest-file
+          git clone https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/nwakileebere821/Kubernetes-manifest-for-Medinova.git
+          cd Kubernetes-manifest-for-Medinova/Medinova.yaml
 
           cat deployment.yaml
+
 
           sed -i "s|image:.*|image: 318689657850.dkr.ecr.us-east-1.amazonaws.com/medinova:$GITHUB_RUN_NUMBER|g" deployment.yaml
 
@@ -65,4 +66,4 @@ jobs:
 
           git add .
           git commit -m "updated medinova image to $GITHUB_RUN_NUMBER"
-          git push https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/nwakileebere821/kubernetes-manifest-file.git HEAD:main
+          git push https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/nwakileebere821/Kubernetes-manifest-for-Medinova.git HEAD:main
